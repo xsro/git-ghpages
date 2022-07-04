@@ -21,10 +21,9 @@ remote="origin"    #The name of the remote
 user_name=""       #The name and email of the user
 user_email=""
 remove=""          #TODO:Remove files that match the given pattern (ignored if used together with --add). (default: ".")
-no_push            #Commit only (with no push)
+no_push=false      #Commit only (with no push)
 no_history=false   #Push force new commit without parent history
 
-if [ "" = "" ]
 folder=$TMPDIR/$me
 
 function remote_url(){
@@ -37,8 +36,8 @@ function remote_url(){
 #function to generate commit message
 function commit_message(){
     cd $dist
-    message="$message $(git rev-parse HEAD)"
-    cd -
+    echo "$message $(git rev-parse HEAD)"
+    cd - >/dev/null
 }
 
 #function to log infomation
@@ -86,18 +85,22 @@ function ghpages_temp_branch(){
         if [ $? -eq 0 ]
         then 
             git branch $branchname $remotename/$branch
-            setup_branch=1
+            setup_branch=0
         fi
     fi
     if [ $setup_branch -eq 1 ]
     then git checkout --orphan $branchname
     fi
+    git switch $branchname
     cd -
 }
 
 function ghpages_copy_files(){
     dist=$1
-    git rm -rf .
+    for file in $(ls $folder)
+    do 
+    rm -rf $folder/$file
+    done
     for file in $(ls $dist)
     do 
     cp -r $dist/$file $folder/
@@ -133,14 +136,26 @@ function ghpages(){
     ghpages_temp_branch $remoteurl
     ghpages_copy_files $dist 
 
+    msg=$(commit_message)
+    cd $dest
+    if [ -z $user_name ]
+    then user_name=$(git config --get user.name)
+    fi
+    if [ -z $user_email ]
+    then user_email=$(git config --get user.email)
+    fi
+    cd -
     cd $folder
     git add .
-    git commit -m"$(commit_message)"
-    if [ "$no_history" = "true" ]
-    then git push -f  $remotename $branchname:$branch
-    else git push  $remotename $branchname:$branch
+    git config --local user.name "$user_name"
+    git config --local user.email "$user_email"
+    git commit -m"$msg"
+    if [ "$no_push" != "true" ]
+    then
+        if [ "$no_history" = "true" ]
+            then git push -f  $remotename $branchname:$branch
+            else git push  $remotename $branchname:$branch
+        fi
     fi
     cd -
 }
-
-
