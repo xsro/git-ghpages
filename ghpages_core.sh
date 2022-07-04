@@ -4,19 +4,40 @@ version="v0.0.1"
 me="git_ghpages_$version"
 remotename=$me
 branchname=$me
+
+# options follow project https://github.com/tschaub/gh-pages
+dist="build"       #Base directory for all source files
+src="**/*"         #TODO: Pattern used to select which files to publish (default: "**/*")
+branch="gh-pages"  #Name of the branch you are pushing to (default: "gh-pages")
+dest="."           #TODO:Target directory within the destination branch (relative to the root) (default: ".")
+add=no             #TODO:Only add, and never remove existing files
+message="Updates"  #commit message
+tag=""             #TODO:add tag to commit
+git="git"          #Path to git executable
+dotfiles=false     #TODO: Include dotfiles
+repo=""            #URL of the repository you are pushing to
+depth=1            #depth for clone (default: 1)
+remote="origin"    #The name of the remote
+user_name=""       #The name and email of the user
+user_email=""
+remove=""          #TODO:Remove files that match the given pattern (ignored if used together with --add). (default: ".")
+no_push            #Commit only (with no push)
+no_history=false   #Push force new commit without parent history
+
+if [ "" = "" ]
 folder=$TMPDIR/$me
-ignore_history=no
-dist="build"
-branch="gh-pages"
 
 function remote_url(){
-    git config --get remote.origin.url
+    if [ -z $repo ]
+    then git config --get remote.$remote.url
+    else echo $repo
+    fi
 }
 
 #function to generate commit message
 function commit_message(){
     cd $dist
-    message="deploy $(git rev-parse HEAD)"
+    message="$message $(git rev-parse HEAD)"
     cd -
 }
 
@@ -59,7 +80,7 @@ function ghpages_temp_branch(){
     fi
     setup_branch=1
     git branch -M $branchname $(date "+%Y%m%d/%H-%M-%S")
-    if [ "$ignore_history" != "yes" ]
+    if [ "$no_history" != "true" ]
     then
         git fetch $remotename $branch
         if [ $? -eq 0 ]
@@ -115,7 +136,7 @@ function ghpages(){
     cd $folder
     git add .
     git commit -m"$(commit_message)"
-    if [ "$ignore_history" = "yes" ]
+    if [ "$no_history" = "true" ]
     then git push -f  $remotename $branchname:$branch
     else git push  $remotename $branchname:$branch
     fi
