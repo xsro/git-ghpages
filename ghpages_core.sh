@@ -47,9 +47,9 @@ function log(){
 
 #make sure the temporary git repository folder exist
 function ghpages_temp_repository(){
-    cd $folder
     if [ -d $folder ]
     then
+        cd $folder
         log "folder $folder is not empty, I run 'git status' here."
         git status
         if [ $? -eq 0 ]
@@ -63,11 +63,11 @@ function ghpages_temp_repository(){
             fi
             git init $folder
         fi
+        cd -
     else
         mkdir -p $folder
         git init $folder
     fi
-    cd -
 }
 
 function ghpages_temp_branch(){
