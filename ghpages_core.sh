@@ -139,10 +139,10 @@ function ghpages(){
     msg=$(commit_message)
     cd $dest
     if [ -z $user_name ]
-    then user_name=$(git config --get user.name)
+    then user_name=$(git log -1 --pretty=format:%an)
     fi
     if [ -z $user_email ]
-    then user_email=$(git config --get user.email)
+    then user_email=$(git log -1 --pretty=format:%ae)
     fi
     cd -
     cd $folder
