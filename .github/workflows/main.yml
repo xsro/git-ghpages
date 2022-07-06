@@ -27,7 +27,7 @@ jobs:
 
       # Runs a single command using the runners shell
       - name: Run a one-line script
-        run: bash -x ./ghpages_demo.sh
+        run: bash ./ghpages_demo.sh ci
         env:
           TMPDIR: "/tmp/"
 

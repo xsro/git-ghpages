@@ -1,37 +1,77 @@
 ## ghpages.sh
 
 version="v0.0.1"
-me="git_ghpages_$version"
-remotename=$me
-branchname=$me
-
-# options follow project https://github.com/tschaub/gh-pages
-dist="build"       #Base directory for all source files
-src="**/*"         #TODO: Pattern used to select which files to publish (default: "**/*")
-branch="gh-pages"  #Name of the branch you are pushing to (default: "gh-pages")
-dest="."           #TODO:Target directory within the destination branch (relative to the root) (default: ".")
-add=no             #TODO:Only add, and never remove existing files
-message="Updates"  #commit message
-tag=""             #TODO:add tag to commit
-git="git"          #Path to git executable
-dotfiles=false     #TODO: Include dotfiles
-repo=""            #URL of the repository you are pushing to
-depth=1            #depth for clone (default: 1)
-remote="origin"    #The name of the remote
-user_name=""       #The name and email of the user
-user_email=""
-remove=""          #TODO:Remove files that match the given pattern (ignored if used together with --add). (default: ".")
-no_push=false      #Commit only (with no push)
-no_history=false   #Push force new commit without parent history
-
-folder=$TMPDIR/$me
 
 function remote_url(){
-    if [ -z $repo ]
-    then git config --get remote.$remote.url
-    else echo $repo
-    fi
+    cd $dist
+    git config --get remote.$remote.url
+    cd - >/dev/null
 }
+
+function set_default_value(){
+    # options follow project https://github.com/tschaub/gh-pages
+    # Base directory for all source files
+    if [ -z $dist ]
+    then dist="build"       
+    fi
+    # Name of the branch you are pushing to (default: "gh-pages")
+    if [ -z $branch ]
+    then branch="gh-pages"  
+    fi
+    # Commit message
+    if [ -z $message ]
+    then message="Updates"  
+    fi
+    # The name and email of the user, by default we use the user in the latest commit
+    if [ -z $user_name ]
+    then user_name=$(git log -1 --pretty=format:%an)
+    fi
+    if [ -z $user_email ]
+    then user_email=$(git log -1 --pretty=format:%ae)
+    fi
+    # The name of the remote
+    if [ -z $remote ]
+    then remote="origin"    
+    fi
+    # Commit only (with no push)
+    if [ -z $no_push ]
+    then no_push=false      
+    fi
+    # Push force new commit without parent history
+    if [ -z $no_history ]
+    then no_history=false
+    fi
+    # add tag to commit
+    if [ -z $tag ]
+    then tag=""
+    fi
+    # URL of the repository you are pushing to
+    if [ -z $repo ]
+    then remoteurl=$(remote_url)
+    else remoteurl=$repo
+    fi
+
+    # unsupported yet
+    dest="."           #Target directory within the destination branch (relative to the root) (default: ".")
+    add=false          #Only add, and never remove existing files
+    git="git"          #Path to git executable
+    dotfiles=false     #Include dotfiles
+    depth=1            #depth for clone (default: 1)
+    src="**/*"         #Pattern used to select which files to publish (default: "**/*")
+    remove=""          #TODO:Remove files that match the given pattern (ignored if used together with --add). (default: ".")
+    
+    # additional options
+    # the folder for store temporary files, will be inited as a git repository
+    if [ -n $TMPDIR ]
+    then folder=$TMPDIR/git_ghpages_$version
+    else folder=/tmp/git_ghpages_$version
+    fi
+    remotename="git_ghpages"
+    branchname="gp"
+
+    log "push files in $dist to branch $branch of $remoteurl"
+}
+
 
 #function to generate commit message
 function commit_message(){
@@ -107,30 +147,8 @@ function ghpages_copy_files(){
     done
 }
 
-function default_value(){
-    empty_opt="_"
-    if [ -z $1 ]
-    then log "default folder $dist"
-    else dist=$1
-    fi
-
-    if [ -z $2 ]
-    then 
-        remoteurl=$(remote_url)
-        log "default remote $remoteurl"
-    else remoteurl=$2
-    fi
-
-    if [ -z $3 ]
-    then log "default branch $3"
-    else branch=$3
-    fi
-
-    log "push files in $dist to branch $branch of $remoteurl"
-}
-
 function ghpages(){
-    default_value
+    set_default_value
 
     ghpages_temp_repository
     ghpages_temp_branch $remoteurl
@@ -138,12 +156,7 @@ function ghpages(){
 
     msg=$(commit_message)
     cd $dest
-    if [ -z $user_name ]
-    then user_name=$(git log -1 --pretty=format:%an)
-    fi
-    if [ -z $user_email ]
-    then user_email=$(git log -1 --pretty=format:%ae)
-    fi
+    
     cd -
     cd $folder
     git add .
@@ -159,3 +172,7 @@ function ghpages(){
     fi
     cd -
 }
+
+if [ -z "$*" ]
+then ghpages
+fi
